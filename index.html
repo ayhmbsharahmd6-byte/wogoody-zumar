@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>موقع وقودي - زمار</title>
+    <!-- مكتبة Tailwind CSS للتصميم -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Cairo', sans-serif; background-color: #f3f4f6; }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spinning { animation: spin 0.8s linear infinite; }
+    </style>
+</head>
+<body class="pb-24">
+
+    <!-- الهيدر العلوي الأزرق -->
+    <header class="bg-sky-600 text-white py-4 px-6 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold">⛽ موقع وقودي - زمار</h1>
+            <button id="refreshBtn" class="bg-sky-500 hover:bg-sky-400 px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+                <svg id="refreshIcon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>تحديث</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 max-w-2xl mt-6 space-y-6">
+        
+        <!-- عنوان القسم -->
+        <div class="text-center">
+            <h2 class="text-lg font-bold text-gray-800">📍 حالة المحطات الحالية</h2>
+        </div>
+
+        <!-- قائمة المحطات -->
+        <div id="stationsList" class="space-y-4">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 text-center text-gray-400">
+                جاري تحميل المحطات...
+            </div>
+        </div>
+
+        <!-- قسم آخر البلاغات المسجلة -->
+        <section class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
+            <h3 class="text-base font-bold text-gray-800 mb-3 border-b pb-2">📋 سجل البلاغات العامة</h3>
+            <div id="allReportsList" class="space-y-3 max-h-96 overflow-y-auto pr-1">
+                <div class="text-center py-4 text-gray-400 text-xs">
+                    جاري تحميل الأرشيف...
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- نافذة إضافة بلاغ منبثقة (Modal) -->
+    <div id="reportModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 id="modalTitle" class="text-lg font-bold text-gray-900">إضافة بلاغ جديد</h3>
+                <button id="closeModalBtn" class="text-gray-400 hover:text-gray-600 font-bold text-lg p-1 cursor-pointer">✕</button>
+            </div>
+            
+            <form id="reportForm" class="space-y-4">
+                <input type="hidden" id="stationSelect">
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">حالة المحطة</label>
+                    <select id="stationState" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 text-xs font-bold outline-none">
+                        <option value="مفتوحة">مفتوحة</option>
+                        <option value="مغلقة">مغلقة</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">حالة الوقود (التوفر)</label>
+                    <select id="fuelStatus" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 text-xs font-bold outline-none">
+                        <option value="متوفر">متوفر</option>
+                        <option value="قارب على النفاد">قارب على النفاد</option>
+                        <option value="غير متوفر">غير متوفر</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">حالة الطابور</label>
+                    <select id="queueStatus" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 text-xs font-bold outline-none">
+                        <option value="لا يوجد ازدحام">لا يوجد ازدحام</option>
+                        <option value="ازدحام متوسط">ازدحام متوسط</option>
+                        <option value="ازدحام طويل">ازدحام طويل</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">نوع المنتج</label>
+                    <select id="fuelType" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 text-xs font-bold outline-none">
+                        <option value="بنزين عادي">بنزين عادي</option>
+                        <option value="بنزين محسن">بنزين محسن</option>
+                        <option value="كاز وايل">كاز وايل</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">مدة الانتظار</label>
+                    <select id="waitTime" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 text-xs font-bold outline-none">
+                        <option value="بدون انتظار">بدون انتظار</option>
+                        <option value="أقل من 15 دقيقة">أقل من 15 دقيقة</option>
+                        <option value="من 15 إلى 30 دقيقة">من 15 إلى 30 دقيقة</option>
+                        <option value="من نصف ساعة إلى ساعة">من نصف ساعة إلى ساعة</option>
+                        <option value="من ساعة إلى ساعتين">من ساعة إلى ساعتين</option>
+                        <option value="أكثر من ساعتين">أكثر من ساعتين</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">عدد السيارات في الطابور</label>
+                    <input type="number" id="carCount" min="0" placeholder="مثلاً: 5" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 text-xs font-bold outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">ملاحظة اختيارية</label>
+                    <textarea id="note" rows="2" placeholder="ملاحظة إضافية..." class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 text-xs font-bold outline-none resize-none"></textarea>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="submit" class="flex-1 bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 rounded-xl transition text-xs">
+                        حفظ البلاغ
+                    </button>
+                    <button type="button" id="cancelModalBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold px-4 py-3 rounded-xl transition text-xs">
+                        إلغاء
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ربط Firebase وتحديث البيانات -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB9yGv0s9Zk4kQ7iZfjtHuWxTZC0yruaaU",
+            authDomain: "wogoody-d9ee1.firebaseapp.com",
+            projectId: "wogoody-d9ee1",
+            storageBucket: "wogoody-d9ee1.firebasestorage.app",
+            messagingSenderId: "306792208424",
+            appId: "1:306792208424:web:859506aecc273508c47d1d",
+            measurementId: "G-ZMW5E5S1GW"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const form = document.getElementById('reportForm');
+        const stationsList = document.getElementById('stationsList');
+        const allReportsList = document.getElementById('allReportsList');
+        const reportModal = document.getElementById('reportModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const stationSelectInput = document.getElementById('stationSelect');
+
+        window.openReportModal = function(stationName) {
+            stationSelectInput.value = stationName;
+            modalTitle.innerText = "إضافة بلاغ لـ: " + stationName;
+            reportModal.classList.remove('hidden');
+        }
+
+        window.closeModal = function() {
+            reportModal.classList.add('hidden');
+            form.reset();
+        }
+
+        document.getElementById('refreshBtn').addEventListener('click', async () => {
+            const icon = document.getElementById('refreshIcon');
+            icon.classList.add('spinning');
+            await loadData();
+            setTimeout(() => {
+                icon.classList.remove('spinning');
+            }, 500);
+        });
+
+        document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+        document.getElementById('cancelModalBtn').addEventListener('click', closeModal);
+
+        // دالة لحساب الوقت المنقضي بشكل دقيق (بالثواني، الدقائق، الساعات)
+        function getTimeAgo(timestamp) {
+            if (!timestamp) return "منذ وقت قصير";
+            try {
+                const date = timestamp.toDate();
+                const now = new Date();
+                const seconds = Math.floor((now - date) / 1000);
+
+                if (seconds < 60) {
+                    return `منذ ${seconds} ثانية`;
+                }
+                const minutes = Math.floor(seconds / 60);
+                if (minutes < 60) {
+                    return `منذ ${minutes} دقيقة`;
+                }
+                const hours = Math.floor(minutes / 60);
+                if (hours < 24) {
+                    return `منذ ${hours} ساعة`;
+                }
+                const days = Math.floor(hours / 24);
+                return `منذ ${days} يوم`;
+            } catch (err) {
+                return "منذ وقت قصير";
+            }
+        }
+
+        const COLLECTION_NAME = "reports"; 
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const station = stationSelectInput.value;
+            const stationState = document.getElementById('stationState').value;
+            const fuelStatus = document.getElementById('fuelStatus').value;
+            const queueStatus = document.getElementById('queueStatus').value;
+            const fuelType = document.getElementById('fuelType').value;
+            const waitTime = document.getElementById('waitTime').value;
+            const carCount = document.getElementById('carCount').value;
+            const note = document.getElementById('note').value;
+
+            try {
+                closeModal();
+
+                await addDoc(collection(db, COLLECTION_NAME), {
+                    stationName: station,
+                    stationState: stationState,
+                    fuelStatus: fuelStatus,
+                    queueStatus: queueStatus,
+                    fuelType: fuelType,
+                    waitTime: waitTime,
+                    carCount: carCount,
+                    note: note,
+                    timestamp: serverTimestamp()
+                });
+                
+                loadData();
+            } catch (error) {
+                console.error("خطأ في حفظ البلاغ: ", error);
+                alert('حدث خطأ، يرجى المحاولة مرة أخرى.');
+            }
+        });
+
+        async function loadData() {
+            try {
+                const q = query(collection(db, COLLECTION_NAME), orderBy("timestamp", "desc"));
+                const querySnapshot = await getDocs(q);
+                
+                const latestReports = {};
+                const allReports = [];
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    allReports.push(data);
+                    if (!latestReports[data.stationName]) {
+                        latestReports[data.stationName] = data;
+                    }
+                });
+
+                // 1. عرض المحطات مع وقت التحديث الدقيق مقابل اسم المحطة
+                stationsList.innerHTML = '';
+                const stationsNames = ["محطة زمار الحكومية", "محطة عيون زمار", "محطة الفيصل", "محطة المروءة"];
+                
+                stationsNames.forEach(name => {
+                    const report = latestReports[name];
+                    const timeAgoText = report ? getTimeAgo(report.timestamp) : 'لا توجد بلاغات';
+
+                    stationsList.innerHTML += `
+                        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 space-y-3">
+                            <div class="flex justify-between items-center border-b pb-2">
+                                <div>
+                                    <h3 class="text-base font-bold text-gray-900">${name}</h3>
+                                    <span class="text-[11px] text-sky-600 font-semibold">🕒 آخر تحديث: ${timeAgoText}</span>
+                                </div>
+                                <button onclick="openReportModal('${name}')" class="bg-sky-600 hover:bg-sky-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition">
+                                    + بلاغ
+                                </button>
+                            </div>
+
+                            <div class="space-y-1.5 text-xs text-gray-700">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">حالة المحطة:</span>
+                                    <span class="font-bold">${report ? report.stationState : '<span class="text-gray-400 font-normal">لا توجد بلاغات بعد</span>'}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">حالة الوقود:</span>
+                                    <span class="font-bold">${report ? report.fuelStatus + ' (' + report.fuelType + ')' : '-'}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">حالة الطابور:</span>
+                                    <span class="font-bold">${report ? report.queueStatus : '-'}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">مدة الانتظار:</span>
+                                    <span class="font-bold">${report ? report.waitTime : '-'}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">عدد السيارات في الطابور:</span>
+                                    <span class="font-bold">${report ? report.carCount + ' سيارة' : '-'}</span>
+                                </div>
+                                ${report && report.note ? `<div class="pt-1 text-gray-500 italic border-t border-gray-100">ملاحظة: ${report.note}</div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                // 2. عرض الأرشيف
+                allReportsList.innerHTML = '';
+                if (allReports.length === 0) {
+                    allReportsList.innerHTML = '<div class="text-center py-4 text-gray-400 text-xs">لا توجد بلاغات مسجلة حتى الآن</div>';
+                } else {
+                    allReports.forEach(rep => {
+                        const repTimeAgo = getTimeAgo(rep.timestamp);
+
+                        allReportsList.innerHTML += `
+                            <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 text-xs space-y-2">
+                                <div class="flex justify-between items-center border-b border-gray-200 pb-2">
+                                    <span class="font-bold text-gray-900 text-sm">⛽ ${rep.stationName}</span>
+                                    <span class="text-sky-600 font-semibold text-[11px]">${repTimeAgo}</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 text-gray-700">
+                                    <div><span class="text-gray-400">حالة المحطة:</span> <span class="font-bold">${rep.stationState}</span></div>
+                                    <div><span class="text-gray-400">حالة الوقود:</span> <span class="font-bold">${rep.fuelStatus} (${rep.fuelType})</span></div>
+                                    <div><span class="text-gray-400">حالة الطابور:</span> <span class="font-bold">${rep.queueStatus}</span></div>
+                                    <div><span class="text-gray-400">مدة الانتظار:</span> <span class="font-bold">${rep.waitTime}</span></div>
+                                    <div class="col-span-2"><span class="text-gray-400">عدد السيارات:</span> <span class="font-bold">${rep.carCount} سيارات</span></div>
+                                </div>
+                                ${rep.note ? `<div class="pt-1.5 text-gray-600 italic border-t border-gray-200/60 text-[11px]">ملاحظة: ${rep.note}</div>` : ''}
+                            </div>
+                        `;
+                    });
+                }
+
+            } catch (error) {
+                console.error("خطأ في جلب البيانات: ", error);
+            }
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
